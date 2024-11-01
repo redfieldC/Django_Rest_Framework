@@ -13,10 +13,23 @@ def register_user(request):
     email = request.data.get('email')
 
     if not username or not password or not email:
-        return Response({'error': 'Please provide username, password, and email'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {'error': 'Please provide username, password, and email', 'type': 'MISSING_FIELDS'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
+    # Check if username already exists
     if User.objects.filter(username=username).exists():
-        return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {'error': 'Username already exists', 'type': 'USERNAME_TAKEN'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    # Check if username already exists
+    if User.objects.filter(email=email).exists():
+        return Response(
+            {'error': 'email already exists', 'type': 'EMAIL_TAKEN'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     user = User.objects.create_user(username=username, password=password, email=email)
     user.save()
