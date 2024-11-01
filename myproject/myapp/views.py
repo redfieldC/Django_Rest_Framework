@@ -4,6 +4,32 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken,AccessToken
+import random
+from django.core.mail import send_mail
+
+OTP_STORAGE={}
+
+
+@api_view(['POST'])
+def send_otp(request):
+    email = request.data.get('email')
+    if not email:
+        return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        user = User.objects.get(email=email)
+        otp = random.randint(100000, 999999)
+        OTP_STORAGE[email] = otp  # Store OTP temporarily
+        send_mail(
+            'Password Reset OTP',
+            f'Your OTP is: {otp}',
+            'your-email@example.com',
+            [email],
+            fail_silently=False,
+        )
+        return Response({'message': 'OTP sent to email'}, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({'error': 'User with this email does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['POST'])
