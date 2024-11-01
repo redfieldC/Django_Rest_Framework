@@ -59,7 +59,7 @@ def login_user(request):
             'email': user.email,
         }, status=status.HTTP_200_OK)
     else:
-        return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({'error': 'Invalid credentials','type':'INVALID_CREDENTIALS'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 @api_view(['POST'])
