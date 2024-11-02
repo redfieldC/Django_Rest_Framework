@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken,AccessToken
 import random
 from django.core.mail import send_mail
+from django.contrib.auth.tokens import default_token_generator
+
 
 OTP_STORAGE={}
 
@@ -28,6 +30,34 @@ def send_otp(request):
             fail_silently=False,
         )
         return Response({'message': 'OTP sent to email'}, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({'error': 'User with this email does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    
+@api_view(['POST'])
+def verify_otp(request):
+    email = request.data.get('email')
+    otp = request.data.get('otp')
+    if OTP_STORAGE.get(email) == int(otp):
+        del OTP_STORAGE[email]  # OTP is valid, remove it
+        token = default_token_generator.make_token(User.objects.get(email=email))
+        return Response({'message': 'OTP verified', 'token': token}, status=status.HTTP_200_OK)
+    return Response({'error': 'Invalid OTP'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+def reset_password(request):
+    email = request.data.get('email')
+    token = request.data.get('token')
+    new_password = request.data.get('new_password')
+
+    try:
+        user = User.objects.get(email=email)
+        if default_token_generator.check_token(user, token):
+            user.set_password(new_password)
+            user.save()
+            return Response({'message': 'Password reset successful'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
     except User.DoesNotExist:
         return Response({'error': 'User with this email does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
